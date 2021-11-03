@@ -1,18 +1,30 @@
+/**
+ * 1. 文件的读写
+ * 2. 文件目录/文件的创建删除
+ * 
+ * 
+ */
+
 const fs = require('fs')
 const path = require('path')
+// 命令行交互工具
 const inquirer = require('inquirer')
 const rollup = require('rollup')
 const chalk = require('chalk')
+// 压缩模块
 const zlib = require('zlib')
+// 删除文件和文件夹
 const rimraf = require('rimraf')
 const typescript = require('rollup-plugin-typescript2')
 const uglify = require('rollup-plugin-uglify').uglify
+// 调用shell和本地外部程序
 const execa = require('execa')
 const ora = require('ora')
 const spinner = ora({
   prefixText: `${chalk.green('\n[building tasks]')}`
 })
 
+// 获取需要打包的文件目录
 function getPackagesName () {
   let ret
   let all = fs.readdirSync(resolve('packages'))
@@ -30,11 +42,12 @@ function getPackagesName () {
   return ret
 }
 
+// 清除旧的打包结果
 function cleanPackagesOldDist(packagesName) {
   packagesName.forEach(name => {
     const distPath = resolve(`packages/${name}/dist`)
     const typePath = resolve(`packages/${name}/dist/types`)
-
+    // 删除目录创建目录
     if (fs.existsSync(distPath)) {
       rimraf.sync(distPath)
     }
@@ -67,7 +80,7 @@ const generateBanner = (packageName) => {
 }
 
 
-
+// 输出的三种格式
 const buildType = [
   {
     format: 'umd',
@@ -83,6 +96,7 @@ const buildType = [
   }
 ]
 
+// 生成打包配置 return  packagesName * buildType 的打包配置
 function generateBuildConfigs(packagesName) {
   const result = []
   packagesName.forEach(name => {
@@ -121,6 +135,7 @@ function generateBuildConfigs(packagesName) {
   })
   return result
 }
+// 生成打包插件
 function generateBuildPluginsConfigs(isMin) {
   const tsConfig = {
     verbosity: -1,
@@ -128,15 +143,19 @@ function generateBuildPluginsConfigs(isMin) {
   }
   const plugins = []
     if (isMin) {
+      // 压缩插件
       plugins.push(uglify())
     }
+  // rollup 打包ts需要的插件
   plugins.push(typescript(tsConfig))
   return plugins
 }
 
+// 实际的打包过程，builds 是三个类型的打包配置
 function build(builds) {
   let built = 0
   const total = builds.length
+  // 看起来是打算继发
   const next = () => {
     buildEntry(builds[built], built + 1, () => {
       builds[built-1] = null
@@ -154,6 +173,7 @@ function buildEntry(config, curIndex, next) {
 
   spinner.start(`${config.packageName}${config.ext} is buiding now. \n`)
 
+  // rollup 打包流程，怎么形成严格的继发流程，上一个打包结束开始下一个，中间没有重叠过程
   rollup.rollup(config).then((bundle) => {
     bundle.write(config.output).then(({ output }) => {
       const code = output[0].code
@@ -181,6 +201,7 @@ function buildEntry(config, curIndex, next) {
       }
     })
   }).catch((e) => {
+    // 看起来一个失败，后面的不需要继续
     spinner.fail('buiding is failed')
     console.log(e)
   })
@@ -200,6 +221,7 @@ function getSize(code) {
   return (code.length / 1024).toFixed(2) + 'kb'
 }
 
+// 获取最终选中的packages
 const getAnswersFromInquirer = async (packagesName) => {
   const question = {
     type: 'checkbox',
@@ -211,6 +233,7 @@ const getAnswersFromInquirer = async (packagesName) => {
       name
     }))
   }
+  // 利用 inquirer 创建问题
   let { packages } = await inquirer.prompt(question)
   // make no choice
   if (!packages.length) {
@@ -240,13 +263,14 @@ const getAnswersFromInquirer = async (packagesName) => {
 
   return packages
 }
+
 const buildBootstrap = async () => {
   const packagesName = getPackagesName()
   // provide 'all' option
   packagesName.unshift('all')
 
   const answers = await getAnswersFromInquirer(packagesName)
-
+  console.log('zza:', answers)
   if (!answers) return
 
   cleanPackagesOldDist(answers)
@@ -258,5 +282,6 @@ const buildBootstrap = async () => {
 }
 buildBootstrap().catch(err => {
   console.error(err)
+  // 退出当前进程
   process.exit(1)
 })

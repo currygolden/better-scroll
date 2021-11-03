@@ -1,6 +1,7 @@
 import { BScrollInstance, propertiesConfig } from './Instance'
 import { Options, DefOptions, OptionsConstructor } from './Options'
 import Scroller from './scroller/Scroller'
+// 这里模块化的方法比较好
 import {
   getElement,
   warn,
@@ -12,12 +13,14 @@ import {
 import { bubbling } from './utils/bubbling'
 import { UnionToIntersection } from './utils/typesHelper'
 
+// 插件构造类接口
 interface PluginCtor {
   pluginName: string
   applyOrder?: ApplyOrder
   new (scroll: BScroll): any
 }
 
+// 插件元素
 interface PluginItem {
   name: string
   applyOrder?: ApplyOrder.Pre | ApplyOrder.Post
@@ -33,19 +36,21 @@ interface PropertyConfig {
 
 type ElementParam = HTMLElement | string
 
+// BS容器
 export interface MountedBScrollHTMLElement extends HTMLElement {
   isBScrollContainer?: boolean
 }
 
+// 核心BS构造类
 export class BScrollConstructor<O = {}> extends EventEmitter {
-  static plugins: PluginItem[] = []
+  static plugins: PluginItem[] = [] //插件
   static pluginsMap: PluginsMap = {}
-  scroller: Scroller
-  options: OptionsConstructor
+  scroller: Scroller // 滚动类
+  options: OptionsConstructor // 构造选项
   hooks: EventEmitter
   plugins: { [name: string]: any }
-  wrapper: HTMLElement
-  content: HTMLElement;
+  wrapper: HTMLElement // 容器元素
+  content: HTMLElement; // 内容元素
   [key: string]: any
 
   static use(ctor: PluginCtor) {
@@ -70,6 +75,7 @@ export class BScrollConstructor<O = {}> extends EventEmitter {
   }
 
   constructor(el: ElementParam, options?: Options & O) {
+    // 实现 EventEmitter 的继承
     super([
       'refresh',
       'contentChanged',
@@ -84,7 +90,7 @@ export class BScrollConstructor<O = {}> extends EventEmitter {
       'flick',
       'destroy'
     ])
-
+    // 获取容器元素
     const wrapper = getElement(el)
 
     if (!wrapper) {
@@ -93,6 +99,7 @@ export class BScrollConstructor<O = {}> extends EventEmitter {
     }
 
     this.plugins = {}
+    // return this
     this.options = new OptionsConstructor().merge(options).process()
 
     if (!this.setContent(wrapper).valid) {
@@ -109,7 +116,7 @@ export class BScrollConstructor<O = {}> extends EventEmitter {
     ])
     this.init(wrapper)
   }
-
+  // 容器区与内容区区分
   setContent(wrapper: MountedBScrollHTMLElement) {
     let contentChanged = false
     let valid = true
@@ -132,13 +139,14 @@ export class BScrollConstructor<O = {}> extends EventEmitter {
       contentChanged
     }
   }
-
+  // 私有方法
   private init(wrapper: MountedBScrollHTMLElement) {
     this.wrapper = wrapper
 
     // mark wrapper to recognize bs instance by DOM attribute
     wrapper.isBScrollContainer = true
     this.scroller = new Scroller(wrapper, this.content, this.options)
+    // 勾子监听
     this.scroller.hooks.on(this.scroller.hooks.eventTypes.resize, () => {
       this.refresh()
     })
@@ -274,6 +282,7 @@ type ExtractAPI<O> = {
     : never
 }[keyof O]
 
+// 返回一定条件的BS实例，这里实际都是在搭建容器，具体实现模块往下划分
 export function createBScroll<O = {}>(
   el: ElementParam,
   options?: Options & O
@@ -296,4 +305,5 @@ export interface BScrollFactory extends createBScroll {
 export type BScroll<O = Options> = BScrollConstructor<O> &
   UnionToIntersection<ExtractAPI<O>>
 
+// BScroll的工厂函数
 export const BScroll = (createBScroll as unknown) as BScrollFactory

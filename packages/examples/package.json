@@ -44,5 +44,8 @@
         "vue-loader": "15.9.6",
         "webpack-cli": "3.3.0",
         "webpackbar": "3.2.0"
+    },
+    "dependencies": {
+        "cross-env": "^7.0.3"
     }
 }

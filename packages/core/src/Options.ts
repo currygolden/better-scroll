@@ -75,9 +75,13 @@ export interface DefOptions {
   quadrant?: Quadrant
 }
 
+// CustomOptions既代表类，也代表类型
+// 实例属性和实例方法 与之相对应的
 export interface Options extends DefOptions, CustomOptions {}
 export class CustomOptions {}
+// 类实现接口
 export class OptionsConstructor extends CustomOptions implements DefOptions {
+  // ES7 提案中可以直接在类里面定义实例属性，ES6 中实例的属性只能通过构造函数constructor
   [key: string]: any
   startX: number
   startY: number
@@ -126,6 +130,7 @@ export class OptionsConstructor extends CustomOptions implements DefOptions {
 
   constructor() {
     super()
+    // 看起来属性初始化
     this.startX = 0
     this.startY = 0
     this.scrollX = false
@@ -160,6 +165,7 @@ export class OptionsConstructor extends CustomOptions implements DefOptions {
     this.resizePolling = 60
     this.probeType = Probe.Default
 
+    // 处理一些事件场景
     this.stopPropagation = false
     this.preventDefault = true
     this.preventDefaultException = {
@@ -183,10 +189,12 @@ export class OptionsConstructor extends CustomOptions implements DefOptions {
     this.specifiedIndexAsContent = 0
     this.quadrant = Quadrant.First
   }
+  // 一般的复合场景都有初始化option的场景
   merge(options?: Options) {
     if (!options) return this
     for (let key in options) {
       if (key === 'bounce') {
+        // 感叹号是非null和非undefined的类型断言，options[key]!存在
         this.bounce = this.resolveBounce(options[key]!)
         continue
       }
@@ -194,6 +202,7 @@ export class OptionsConstructor extends CustomOptions implements DefOptions {
     }
     return this
   }
+  // 选项特殊配置场景
   process() {
     this.translateZ =
       this.HWCompositing && hasPerspective ? ' translateZ(1px)' : ''

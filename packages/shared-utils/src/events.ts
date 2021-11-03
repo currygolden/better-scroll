@@ -1,10 +1,12 @@
 import { warn } from './debug'
 import { addEvent, removeEvent } from './dom'
 
+// 定义任意属性，数组的范型
 interface Events {
   [name: string]: [WithFnFunction, Object][]
 }
 
+// 定义接口的任意属性，值是string
 interface EventTypes {
   [type: string]: string
 }
@@ -13,6 +15,7 @@ interface WithFnFunction extends Function {
   fn?: Function
 }
 
+// 发布订阅模式
 export class EventEmitter {
   events: Events
   eventTypes: EventTypes
@@ -21,7 +24,7 @@ export class EventEmitter {
     this.eventTypes = {}
     this.registerType(names)
   }
-
+  // 看到这里的on可以知道这是观察者模式，直接push 做不到对具体的监听来处理
   on(type: string, fn: Function, context: Object = this) {
     this.hasType(type)
     if (!this.events[type]) {
